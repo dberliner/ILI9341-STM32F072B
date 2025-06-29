@@ -1,5 +1,0 @@
-/home/dan/stm32f0_disp/CMakeFiles/stm32f0_disp.dir
-/home/dan/stm32f0_disp/CMakeFiles/edit_cache.dir
-/home/dan/stm32f0_disp/CMakeFiles/rebuild_cache.dir
-/home/dan/stm32f0_disp/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
-/home/dan/stm32f0_disp/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

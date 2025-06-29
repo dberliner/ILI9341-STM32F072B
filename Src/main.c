@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "ili9341_driver.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -103,32 +104,31 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
+  ili9341_set_hw_intf(stm32f072b_ili9341_setup_driver(&hspi2));
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t bt = 0x00;
-  HAL_StatusTypeDef ret;
-  while (1)
-  {
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-    ret = HAL_SPI_Transmit(&hspi2, &bt, 1, 100000);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-    if (ret & 0x1)
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-    else
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 
-    if (ret & 0x2)
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
-    else
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_RESET);
+  // init lcd
+  ILI9341_Init();
 
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_8);
+  // clear Screen
+  ILI9341_ClearScreen(ILI9341_BLACK);
 
-    bt++;
-    HAL_Delay(500);
-  }
+  // draw horizontal fast line
+  ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 12, ILI9341_WHITE);
+  // draw horizontal fast line
+  ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 50, ILI9341_WHITE);
+
+  // set position
+  ILI9341_SetPosition(11, 25);  
+  // draw string
+  ILI9341_DrawString("ILI9341 LCD DRIVER", ILI9341_RED, X3);
+
+  /* Never reach end */
+  while (1) ;
 }
 
 /**
@@ -362,7 +362,7 @@ static void MX_GPIO_Init(void)
                           |LD4_Pin|LD5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, DISP_RESET_Pin|DISP_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, DISP_RESET_Pin|DISP_CS_Pin|DISP_DC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : NCS_MEMS_SPI_Pin EXT_RESET_Pin LD3_Pin LD6_Pin
                            LD4_Pin LD5_Pin */
@@ -385,8 +385,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DISP_RESET_Pin DISP_CS_Pin */
-  GPIO_InitStruct.Pin = DISP_RESET_Pin|DISP_CS_Pin;
+  /*Configure GPIO pins : DISP_RESET_Pin DISP_CS_Pin DISP_DC_Pin */
+  GPIO_InitStruct.Pin = DISP_RESET_Pin|DISP_CS_Pin|DISP_DC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
