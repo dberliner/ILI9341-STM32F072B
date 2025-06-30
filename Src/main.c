@@ -115,7 +115,17 @@ int main(void)
   ILI9341_Init();
 
   // clear Screen
-  ILI9341_ClearScreen(ILI9341_BLACK);
+  ILI9341_ClearScreen(ILI9341_RGB565(0x1,0,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0x10,0,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0x1F,0,0));
+
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0x1,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0x20,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0x3F,0));
+
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x10));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
 
   // draw horizontal fast line
   ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 12, ILI9341_WHITE);
@@ -125,7 +135,7 @@ int main(void)
   // set position
   ILI9341_SetPosition(11, 25);  
   // draw string
-  ILI9341_DrawString("ILI9341 LCD DRIVER", ILI9341_RED, X3);
+  ILI9341_DrawString("ILI9341 LCD DRIVER", ILI9341_WHITE, X3);
 
   /* Never reach end */
   while (1) ;
