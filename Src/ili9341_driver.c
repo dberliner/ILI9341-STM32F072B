@@ -42,39 +42,19 @@ static void delay(uint32_t delay_us) {
   HAL_Delay(delay_us / 1000);
 }
 
-void sendbyte(uint8_t b) {
-  HAL_SPI_Transmit(_hspi, &b, 1, 1000);
-}
-
 static void commit(void* _unused) {
   (void) _unused;
   HAL_SPI_Transmit(_hspi, _vrambuf, _vrambuf_len, 1000);
   _vrambuf_len = 0;
 }
 
-/* Writes the 18 least significant bits to the outgoing buffer */
-static void sendPx(uint32_t b) {
-  uint8_t *mem_byte = _vrambuf + _vrambuf_len;
-  uint8_t R=0, G=0, B=0;
-  uint8_t colorBuf[2] = { 0 };
-
-  /* TODO Support 666 color scheme if that's what is enabled */
-  ILI9341_RGB565_DECODE(b, R, G, B)
-  /* Sent first: The entire R buffer (5 bits) */
-  colorBuf[0] = R<<3;
-  /* Sent second: The most significant bits of G (3 bits) */
-  colorBuf[0] |= (G>>3) & 0x7;
-  /* Sent third: The least significant bits of G (3 bits) */
-  colorBuf[1] = (G & 0x7)<<5;
-  /* Sent fourth: The B buffer (5 bits) */
-  colorBuf[1] |= B & 0x1F;
-  memcpy(mem_byte, colorBuf, sizeof(colorBuf));
-
-  if ((_vrambuf_len+=2) == ILI9341_MAX_X) {
+void sendbyte(uint8_t b) {
+  if (_vrambuf_len == ILI9341_MAX_X) {
     commit(NULL);
   }
-}
 
+  _vrambuf[_vrambuf_len++] = b;
+}
 
 static ili9341_hw_intf_t stm32f072b_ili9341_driver = {
   .reset_pin=reset_pin,
@@ -82,9 +62,7 @@ static ili9341_hw_intf_t stm32f072b_ili9341_driver = {
   .cs_pin=cs_pin,
   .delay=delay,
   .sendbyte=sendbyte,
-  .sendpx=sendPx,
-  .commit=commit,
-  .async=true
+  .commit=commit
 };
 
 const ili9341_hw_intf_t* stm32f072b_ili9341_setup_driver(SPI_HandleTypeDef *hspi) {
