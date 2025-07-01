@@ -114,7 +114,7 @@ int main(void)
   // init lcd
   ILI9341_Init();
 
-  // clear Screen
+  // clear Screen on shades of R, G and B
   ILI9341_ClearScreen(ILI9341_RGB565(0x1,0,0));
   ILI9341_ClearScreen(ILI9341_RGB565(0x10,0,0));
   ILI9341_ClearScreen(ILI9341_RGB565(0x1F,0,0));
@@ -125,17 +125,18 @@ int main(void)
 
   ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1));
   ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x10));
+
+  // Draw the text section
   ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
-
-  // draw horizontal fast line
   ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 12, ILI9341_WHITE);
-  // draw horizontal fast line
   ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 50, ILI9341_WHITE);
+  ILI9341_SetPosition(11, 25);
+  ILI9341_DrawStringFast("ILI9341 LCD DRIVER", ILI9341_WHITE, 2, ILI9341_RGB565(0,0x3F,0));
 
-  // set position
-  ILI9341_SetPosition(11, 25);  
-  // draw string
-  ILI9341_DrawString("ILI9341 LCD DRIVER", ILI9341_WHITE, X3);
+  /* Draw a few rectangles */
+  ILI9341_DrawRect(30, 130, 15, 15, ILI9341_RGB565(31, 0, 31));
+  ILI9341_DrawRect(60, 60, 15, 15, ILI9341_RGB565(31, 63, 0));
+  ILI9341_DrawRect(100, 150, 45, 15, ILI9341_RGB565(31, 0, 0));
 
   /* Never reach end */
   while (1) ;
