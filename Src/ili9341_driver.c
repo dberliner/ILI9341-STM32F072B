@@ -6,8 +6,14 @@ static SPI_HandleTypeDef *_hspi = NULL;
 
 /* This device only has 16k ram and it would take ~178k to buffer a full colored frame */
 /* Rows of 240 18-byte pixels are byte alligned (540 bytes) */
-static uint8_t _vrambuf[ILI9341_MAX_X*2] = { 0 };
-static uint8_t _vrambuf_len = 0;
+#define _BUFF_CNT 2
+static uint8_t _vrambuf[_BUFF_CNT][ILI9341_MAX_X*4] = { 0 };
+static uint16_t _vrambuf_len[_BUFF_CNT] = { 0 };
+static uint8_t _vram_active_buf = 0;
+
+#define _ACTIVE_VRBUF _vrambuf[_vram_active_buf]
+#define _ACTIVE_VBLEN _vrambuf_len[_vram_active_buf]
+#define _ACTIVE_VRBUF_SWAP() _ACTIVE_VBLEN=0; _vram_active_buf=(++_vram_active_buf)%_BUFF_CNT;
 
 static void reset_pin(ili9341_reset_e status) {
   if (status == RESET_HIGH_NOTSET) {
@@ -44,16 +50,31 @@ static void delay(uint32_t delay_us) {
 
 static void commit(void* _unused) {
   (void) _unused;
-  HAL_SPI_Transmit(_hspi, _vrambuf, _vrambuf_len, 1000);
-  _vrambuf_len = 0;
+
+  if (!_ACTIVE_VBLEN) return;
+
+  /* Wait until sending is possible */
+  HAL_StatusTypeDef status;
+  while ((status = HAL_SPI_Transmit_DMA(_hspi, _ACTIVE_VRBUF, _ACTIVE_VBLEN)) == HAL_BUSY) ;
+
+  _ACTIVE_VRBUF_SWAP();
+
 }
 
-void sendbyte(uint8_t b) {
-  if (_vrambuf_len == ILI9341_MAX_X) {
+static void sendbyte(uint8_t b) {
+  if (_ACTIVE_VBLEN == ILI9341_MAX_X*4) {
     commit(NULL);
   }
 
-  _vrambuf[_vrambuf_len++] = b;
+  _ACTIVE_VRBUF[_ACTIVE_VBLEN++] = b;
+}
+
+static void barrier(void *_unused) {
+  (void) _unused;
+  if (_ACTIVE_VBLEN) {
+    commit(NULL);
+  }
+  while (_hspi->State != HAL_SPI_STATE_READY) ;
 }
 
 static ili9341_hw_intf_t stm32f072b_ili9341_driver = {
@@ -62,7 +83,8 @@ static ili9341_hw_intf_t stm32f072b_ili9341_driver = {
   .cs_pin=cs_pin,
   .delay=delay,
   .sendbyte=sendbyte,
-  .commit=commit
+  .commit=commit,
+  .barrier=barrier
 };
 
 const ili9341_hw_intf_t* stm32f072b_ili9341_setup_driver(SPI_HandleTypeDef *hspi) {
