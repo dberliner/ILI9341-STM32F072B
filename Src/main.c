@@ -80,6 +80,10 @@ static uint16_t _tx_buf_ptr = 0;
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+typedef struct {
+  uint16_t x,y;
+  uint8_t w,h;
+} box;
 
 /* USER CODE END 0 */
 
@@ -142,21 +146,81 @@ int main(void)
 
   ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1));
   ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x10));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
 
   // Draw the text section
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
   ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 12, ILI9341_WHITE);
   ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 50, ILI9341_WHITE);
   ILI9341_SetPosition(11, 25);
-  ILI9341_DrawStringFast("ILI9341 LCD DRIVER", ILI9341_WHITE, 2, ILI9341_RGB565(0,0x3F,0));
+  ILI9341_DrawStringFast("ILI9341 LCD DRIVER", ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
 
   /* Draw a few rectangles */
   ILI9341_DrawRect(30, 130, 15, 15, ILI9341_RGB565(31, 0, 31));
   ILI9341_DrawRect(60, 60, 15, 15, ILI9341_RGB565(31, 63, 0));
   ILI9341_DrawRect(100, 150, 45, 15, ILI9341_RGB565(31, 0, 0));
 
-  /* Never reach end */
-  while (1) ;
+  /* Draw a square and bounce it side to side */
+  box display_box = {
+    .x = 0,
+    .y = 250,
+    .w=30,
+    .h=30
+  };
+  bool box_move_right = true;
+
+  /* Track and display FPS */
+  uint32_t tickend = 0;
+  uint32_t tickstart = 0;
+  char fpsStr[8] = { 0 };
+  uint16_t fps = 0;
+  ILI9341_SetPosition(11, 55);
+  ILI9341_DrawStringFast("FPS", ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
+  while (1) {
+    if (tickend > tickstart) {
+      fps = 1000/(tickend-tickstart);
+      fpsStr[0] = '0' + ((fps%1000)/100);
+      fpsStr[1] = '0' + ((fps%100)/10);
+      fpsStr[2] = '0' + (fps%10);
+    }
+
+    tickstart = HAL_GetTick();
+
+    ILI9341_SetPosition(55, 55);
+    ILI9341_DrawStringFast(fpsStr, ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
+
+    ILI9341_DrawRect(
+      display_box.x, display_box.y,
+      display_box.w, display_box.h,
+      ILI9341_RGB565(0x1F,0,0)
+    );
+
+    /* Redraw the background where the box used to be */
+    if (box_move_right) {
+      ILI9341_DrawLineVertical(display_box.x-1, display_box.y, display_box.y+display_box.h, ILI9341_RGB565(0,0,0x1F));
+    } else {
+      ILI9341_DrawLineVertical(display_box.x+display_box.w+1, display_box.y, display_box.y+display_box.h, ILI9341_RGB565(0,0,0x1F));
+    }
+
+    /* Reverse direction on an edge collision */
+    if (box_move_right && display_box.x + display_box.w + 1 > 240) {
+      box_move_right = !box_move_right;
+    } else if (!box_move_right && display_box.x-1 < 0) {
+      box_move_right = !box_move_right;
+    }
+
+    /* Move the box */
+    if (box_move_right) display_box.x++;
+    else display_box.x--;
+
+    if (_tx_buf_ptr) {
+      IRQ_Disable()
+      HAL_UART_Transmit_IT(&huart1, _tx_buf, _tx_buf_ptr);
+      _tx_buf_ptr = 0;
+    }
+
+    tickend = HAL_GetTick();
+  }
+ while(1) ;
 }
 
 /**
