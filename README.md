@@ -26,4 +26,4 @@ This is a demonstration of a ILI9341 LCD using SPI connected to a STM32F072B Dis
 
 ## Note on speed ##
 
-Full screen writes take about 600ms, mostly due to SPI/DMA overhead. This is a pretty hard limitation becuase the LCD does not accept pixel data in a format smaller than 16 bits per pixel.
+Full screen writes take about 600ms if dealing with arbitrary pixels. The bottleneck here is the speed of memory writes, a buffer transfered via the DMA repetitively (to draw a pattern or solid color) will alow for ~3fps.
