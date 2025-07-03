@@ -27,8 +27,3 @@ This is a demonstration of a ILI9341 LCD using SPI connected to a STM32F072B Dis
 ## Note on speed ##
 
 Full screen writes take about 600ms, mostly due to SPI/DMA overhead. This is a pretty hard limitation becuase the LCD does not accept pixel data in a format smaller than 16 bits per pixel.
-
-Project ideas
-* FGPA drawing accelerator
-* More MADCTL based features
-* Realtime rendering based on small memory model and partial rendering (IE Pong)
