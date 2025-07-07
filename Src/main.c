@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "ili9341_driver.h"
+#include "../ILI9341/lib/font.h"
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -85,6 +86,62 @@ typedef struct {
   uint8_t w,h;
 } box;
 
+void Demo(void) {
+  /* Two lines of video memory */
+  uint8_t bgBuf1[ILI9341_MAX_X*2]; for (unsigned i=0; i<sizeof(bgBuf1); i+=2) {ILI9341_RGB565_DECODETOBUF(bgBuf1+i,ILI9341_RGB565(0x1F,0,0));}
+  uint8_t bgBuf2[ILI9341_MAX_X*2]; for (unsigned i=0; i<sizeof(bgBuf2); i+=2) {ILI9341_RGB565_DECODETOBUF(bgBuf2+i,ILI9341_RGB565(0,0x3F,0));}
+  uint8_t bgBuf3[ILI9341_MAX_X*2]; for (unsigned i=0; i<sizeof(bgBuf3); i+=2) {ILI9341_RGB565_DECODETOBUF(bgBuf3+i,ILI9341_RGB565(0,0,0x1F));}
+  uint8_t txtBuf2x[10][(CHARS_COLS_LENGTH*2)*(CHARS_ROWS_LENGTH*2)*2] = { 0 };
+
+  for (int i=0; i<10; i++) {
+    ILI9341_RenderScaledBitmapColMajor(
+      txtBuf2x[i],
+      CHARS_COLS_LENGTH*2,
+      CHARS_ROWS_LENGTH*2,
+      FONTS['0' - 32 + i],
+      CHARS_COLS_LENGTH,
+      CHARS_ROWS_LENGTH, ILI9341_RGB565(0,0,0),
+      ILI9341_RGB565(0x1F,0x3F,0x1F));
+  }
+
+  /* Render 3 backgrounds the slow way */
+  ILI9341_ClearScreen(ILI9341_RGB565(0x1F,0,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0x3F,0));
+  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
+
+  /* Render 3 backgrounds the fast way */
+  ILI9341_WritePatternRect(bgBuf1, sizeof(bgBuf1), 0, 0, ILI9341_MAX_X, ILI9341_MAX_Y);
+  ILI9341_WritePatternRect(bgBuf2, sizeof(bgBuf2), 0, 0, ILI9341_MAX_X, ILI9341_MAX_Y);
+  ILI9341_WritePatternRect(bgBuf3, sizeof(bgBuf3), 0, 0, ILI9341_MAX_X, ILI9341_MAX_Y);
+
+  /* Write text the slowest (but most flexible) way */
+  ILI9341_SetPosition(0,0);
+  ILI9341_DrawString("Slow no-BG text", ILI9341_RGB565(0x1F,0x3F,0x1F), X3);
+
+  /* Write text with a background, faster */
+  ILI9341_SetPosition(0,25);
+  ILI9341_DrawStringFast("Faster with BG", ILI9341_RGB565(0x1F,0x3F,0x1F), 2, ILI9341_RGB565(0,0x2F,0));
+
+  /* Pre-render for fastest */
+  ILI9341_SetPosition(0,50);
+  ILI9341_DrawStringFast("Fastest Pre-Render:", ILI9341_RGB565(0x1F,0x3F,0x1F), 2, ILI9341_RGB565(0,0,0x1F));
+  for (int i=0; i<1000; i++) {
+    uint8_t hundreds = i / 100;
+    uint8_t tens = (i % 100) / 10;
+    uint8_t ones = i % 10;
+    ILI9341_WritePatternRect(txtBuf2x[hundreds], sizeof(txtBuf2x[hundreds]), 0, 75, CHARS_COLS_LENGTH*2, CHARS_ROWS_LENGTH*2);
+    ILI9341_WritePatternRect(txtBuf2x[tens], sizeof(txtBuf2x[tens]), 12, 75, CHARS_COLS_LENGTH*2, CHARS_ROWS_LENGTH*2);
+    ILI9341_WritePatternRect(txtBuf2x[ones], sizeof(txtBuf2x[ones]), 24, 75, CHARS_COLS_LENGTH*2, CHARS_ROWS_LENGTH*2);
+  }
+
+  /* Draw lines */
+  ILI9341_DrawLine(100, 200, 100, 200, ILI9341_RGB565(0x1F, 0, 0));
+  ILI9341_DrawLineVertical(100,100,200,ILI9341_RGB565(0x1F, 0, 0));
+  ILI9341_DrawLineHorizontal(100,200,200,ILI9341_RGB565(0x1F, 0, 0));
+
+  while(1) ;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -125,102 +182,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   ili9341_set_hw_intf(stm32f072b_ili9341_setup_driver(&hspi2));
-  HAL_UART_Receive_IT(&huart1, &_inp, 1);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   // init lcd
   ILI9341_Init();
 
-  // clear Screen on shades of R, G and B
-  ILI9341_ClearScreen(ILI9341_RGB565(0x1,0,0));
-  ILI9341_ClearScreen(ILI9341_RGB565(0x10,0,0));
-  ILI9341_ClearScreen(ILI9341_RGB565(0x1F,0,0));
-
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0x1,0));
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0x20,0));
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0x3F,0));
-
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1));
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x10));
-  ILI9341_ClearScreen(ILI9341_RGB565(0,0,0x1F));
-
-  // Draw the text section
-  ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 12, ILI9341_WHITE);
-  ILI9341_DrawLineHorizontal(10, ILI9341_MAX_X - 10, 50, ILI9341_WHITE);
-  ILI9341_SetPosition(11, 25);
-  ILI9341_DrawStringFast("ILI9341 LCD DRIVER", ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
-
-  /* Draw a few rectangles */
-  ILI9341_DrawRect(30, 130, 15, 15, ILI9341_RGB565(31, 0, 31));
-  ILI9341_DrawRect(60, 60, 15, 15, ILI9341_RGB565(31, 63, 0));
-  ILI9341_DrawRect(100, 150, 45, 15, ILI9341_RGB565(31, 0, 0));
-
-  /* Draw a square and bounce it side to side */
-  box display_box = {
-    .x = 0,
-    .y = 250,
-    .w=30,
-    .h=30
-  };
-  bool box_move_right = true;
-
-  /* Track and display FPS */
-  uint32_t tickend = 0;
-  uint32_t tickstart = 0;
-  char fpsStr[8] = { 0 };
-  uint16_t fps = 0;
-  ILI9341_SetPosition(11, 55);
-  ILI9341_DrawStringFast("FPS", ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
-  while (1) {
-    if (tickend > tickstart) {
-      fps = 1000/(tickend-tickstart);
-      fpsStr[0] = '0' + ((fps%1000)/100);
-      fpsStr[1] = '0' + ((fps%100)/10);
-      fpsStr[2] = '0' + (fps%10);
-    }
-
-    tickstart = HAL_GetTick();
-
-    ILI9341_SetPosition(55, 55);
-    ILI9341_DrawStringFast(fpsStr, ILI9341_WHITE, 2, ILI9341_RGB565(0,0,0x3F));
-
-    ILI9341_DrawRect(
-      display_box.x, display_box.y,
-      display_box.w, display_box.h,
-      ILI9341_RGB565(0x1F,0,0)
-    );
-
-    /* Redraw the background where the box used to be */
-    if (box_move_right) {
-      ILI9341_DrawLineVertical(display_box.x-1, display_box.y, display_box.y+display_box.h, ILI9341_RGB565(0,0,0x1F));
-    } else {
-      ILI9341_DrawLineVertical(display_box.x+display_box.w+1, display_box.y, display_box.y+display_box.h, ILI9341_RGB565(0,0,0x1F));
-    }
-
-    /* Reverse direction on an edge collision */
-    if (box_move_right && display_box.x + display_box.w + 1 > 240) {
-      box_move_right = !box_move_right;
-    } else if (!box_move_right && display_box.x-1 < 0) {
-      box_move_right = !box_move_right;
-    }
-
-    /* Move the box */
-    if (box_move_right) display_box.x++;
-    else display_box.x--;
-
-    if (_tx_buf_ptr) {
-      IRQ_Disable()
-      HAL_UART_Transmit_IT(&huart1, _tx_buf, _tx_buf_ptr);
-      _tx_buf_ptr = 0;
-    }
-
-    tickend = HAL_GetTick();
-  }
- while(1) ;
+  Demo();
 }
 
 /**
