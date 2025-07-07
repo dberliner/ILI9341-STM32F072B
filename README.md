@@ -21,6 +21,12 @@ This is a demonstration of a ILI9341 LCD using SPI connected to a STM32F072B Dis
 | GND | GND |
 
 ## Demonstration ##
+The demonstration draws the following:
+1. Draws red, green and blue to the screen pixel-by-pixel
+2. Draws text pixel-by-pixel
+3. Draws text using a faster process with a background
+4. Draws a counter from 000-999 using pre-rendered text (this is the fastest way to draw text)
+5. Draws a right triangle using vertical line, horizontal line and arbitrary line functions
 
 <img src="img/img.jpg" />
 
